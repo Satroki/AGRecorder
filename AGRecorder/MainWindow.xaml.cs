@@ -22,6 +22,7 @@ using System.Xml.Linq;
 using System.Xml;
 
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
+using HtmlAgilityPack;
 
 namespace RadioRecorder
 {
@@ -195,65 +196,88 @@ namespace RadioRecorder
         {
             try
             {
-                var tsi = str.IndexOf("</thead>");
-                var tei = str.IndexOf("</table>");
-                str = str.Substring(tsi, tei - tsi + 8);
-
-                var bgms = Regex.Matches(str, "<td([\\s\\S]*?)</td>");
-                var flags = new List<bool>(new bool[45 * 7]);
                 var list = new List<Bangumi>();
-                foreach (Match bgm in bgms)
+                var timeLine = new int[7];
+                var doc = new HtmlDocument();
+                doc.LoadHtml(str);
+                var tabel = doc.DocumentNode.Descendants("table").First(n => n.Attributes["class"]?.Value == "timetb-ag");
+                var trList = tabel.Descendants("tbody").First().Descendants("tr").Where(n => !string.IsNullOrEmpty(n.InnerHtml));
+                foreach (var tr in trList)
                 {
-                    var value = bgm.Value;
-                    var index = flags.FindIndex(f => f == false);
-                    var day = (index + 1) % 7;
-                    var duration = 30;
-                    flags[index] = true;
-
-                    var match = Regex.Match(value, "rowspan=\"\\d{1,6}\"");
-                    if (!string.IsNullOrEmpty(match.Value))
+                    var th = tr.Descendants("th").FirstOrDefault();
+                    if (th != null)
                     {
-                        var span = int.Parse(match.Value.Substring(9, 1));
-                        for (int i = 1; i < span; i++)
+                        var hour = int.Parse(th.InnerText);
+                        if (hour < 6)
+                            hour += 24;
+                        var min = hour * 60;
+                        for (int i = 0; i < timeLine.Length; i++)
                         {
-                            flags[index + 7 * i] = true;
+                            if (timeLine[i] < min)
+                                timeLine[i] = min;
                         }
-                        duration *= span;
                     }
-
-                    string type = "";
-                    if (value.Contains("m.gif"))
-                        type += "M";
-                    if (!value.Contains("bg"))
-                        type += "R";
-                    else if (value.Contains("bg-l"))
-                        type += "L";
-
-                    int si = 0, ei = 0;
-                    si = value.IndexOf("\"time\">") + 8;
-                    ei = value.IndexOf("<", si);
-                    var time = DateTime.Parse(value.Substring(si, ei - si).Trim());
-
-                    si = value.IndexOf("\"title-p\">") + 11;
-                    ei = value.IndexOf("</div>", si);
-                    var title = value.Substring(si, ei - si);
-                    title = Regex.Replace(title, "<.*?>", "").Trim();
-
-                    si = value.IndexOf("\"rp\">") + 6;
-                    ei = value.IndexOf("</div>", si);
-                    var p = value.Substring(si, ei - si);
-                    p = Regex.Replace(p, "(<!--.*?-->)|(<.*?>)", "").Trim();
-                    Bangumi b = new Bangumi()
+                    var day = -1;
+                    var tds = tr.Descendants("td").ToList();
+                    foreach (var td in tds)
                     {
-                        Title = title,
-                        Day = day,
-                        Personality = p,
-                        Hour = time.Hour,
-                        Minute = time.Minute,
-                        Type = type,
-                        Duration = duration
-                    };
-                    list.Add(b);
+                        Bangumi b = new Bangumi();
+                        var span = 0;
+                        var m = td.Attributes["rowspan"].Value;
+                        span = int.Parse(m);
+                        b.Duration = span;
+
+
+
+                        var divs = td.Descendants("div").ToList();
+                        var dtime = divs.FirstOrDefault(d => d.Attributes["class"]?.Value == "time");
+                        if (dtime != null)
+                        {
+                            var time = Regex.Match(dtime.InnerText, @"(\d{2}):(\d{2})");
+                            var hour = int.Parse(time.Groups[1].Value);
+                            var min = int.Parse(time.Groups[2].Value);
+                            day = setTime(timeLine, hour * 60 + min + span, day);
+
+                            b.Minute = min;
+                            if (hour >= 24)
+                            {
+                                b.Day = (day + 2) % 7;
+                                b.Hour = hour - 24;
+                            }
+                            else
+                            {
+                                b.Day = (day + 1) % 7;
+                                b.Hour = hour;
+                            }
+
+                            var typeValue = td.Attributes["class"].Value;
+                            string type = "";
+                            var movie = dtime.Descendants("img").FirstOrDefault()?.Attributes["src"]?.Value.Contains("m.gif");
+                            if (movie == true)
+                                type += "M";
+                            if (typeValue.Contains("repeat"))
+                                type += "R";
+                            else if (typeValue.Contains("bg-l"))
+                                type += "L";
+                            b.Type = type;
+                        }
+
+                        var dtitle = divs.FirstOrDefault(d => d.Attributes["class"]?.Value == "title-p");
+                        if (dtitle != null)
+                        {
+                            var title = dtitle.InnerText.Trim();
+                            b.Title = title;
+                        }
+
+                        var drp = divs.FirstOrDefault(d => d.Attributes["class"]?.Value == "rp");
+                        if (drp != null)
+                        {
+                            var rp = drp.InnerText.Trim();
+                            rp = Regex.Replace(rp, "<!--.*-->", "");
+                            b.Personality = rp;
+                        }
+                        list.Add(b);
+                    }
                 }
                 return list.Where(b => !b.Title.Contains("放送休止"))
                     //.OrderBy(b => b.Day).ThenBy(b => b.Hour)
@@ -264,6 +288,19 @@ namespace RadioRecorder
                 MessageBox.Show(ex.Message);
                 return null;
             }
+        }
+
+        private int setTime(int[] line, int time, int start)
+        {
+            for (int i = start + 1; i < line.Length; i++)
+            {
+                if (time > line[i])
+                {
+                    line[i] = time;
+                    return i;
+                }
+            }
+            return 0;
         }
 
         private async void B_UpdateBGMList_Click(object sender, RoutedEventArgs e)
