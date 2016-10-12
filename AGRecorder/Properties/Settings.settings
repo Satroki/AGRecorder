@@ -1,0 +1,45 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="RadioRecorder.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="番组表" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://agqr.jp/timetable/streaming.php</Value>
+    </Setting>
+    <Setting Name="BgmPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Bangumi.xml</Value>
+    </Setting>
+    <Setting Name="TaskPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Task.xml</Value>
+    </Setting>
+    <Setting Name="默认路径" Type="System.String" Scope="User">
+      <Value Profile="(Default)">E:\Radio</Value>
+    </Setting>
+    <Setting Name="默认格式" Type="System.String" Scope="User">
+      <Value Profile="(Default)">{0:yyyyMMdd}-{1}.flv</Value>
+    </Setting>
+    <Setting Name="RTMP" Type="System.String" Scope="User">
+      <Value Profile="(Default)">rtmp://fms-base2.mitene.ad.jp/agqr/aandg11</Value>
+    </Setting>
+    <Setting Name="CmdPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Cmd.xml</Value>
+    </Setting>
+    <Setting Name="HBKFormat" Type="System.String" Scope="User">
+      <Value Profile="(Default)">{0}-{1}-{2}.flv</Value>
+    </Setting>
+    <Setting Name="RTMPE" Type="System.String" Scope="User">
+      <Value Profile="(Default)">rtmpe://cp209391.edgefcs.net/ondemand/</Value>
+    </Setting>
+    <Setting Name="窗体宽" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">650</Value>
+    </Setting>
+    <Setting Name="窗体高" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">460</Value>
+    </Setting>
+    <Setting Name="前后时间" Type="System.String" Scope="User">
+      <Value Profile="(Default)">60,30</Value>
+    </Setting>
+    <Setting Name="最小化到托盘" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
